@@ -1,5 +1,8 @@
 # retina-segmentation
-This repository consists of code to segment 3 retinal layers (and the background, and outer borders), i.e. ILM-OPL-HFL, ONL, and BMEIS-OB-RPE. To see how to train the model, refer to the `notebooks` folders.
+This repository consists of code to segment 3 retinal layers (and the background, and outer borders), i.e. ILM-OPL-HFL, ONL, and BMEIS-OB-RPE. To see how to train the model, refer to the `notebooks` folders. Further, this repository consists of code to reproduce the results of the paper "Deep Learning based retinal layer segmentation in optical coherence tomography scans of patients with inherited retinal diseases" which was published and accepted in "Klinische Monatsblätter für Augenheilkunde".
+
+https://www.thieme-connect.de/products/ejournals/pdf/10.1055/a-2227-3742.pdf
+
 We used 2D slides of OCT scans as Input from healthy patients with the eventual goal of segmenting the layers of IRD (inherited retinal diseases) patients. 
 Finally, the repository contains code to calculate Thickness maps and ETDRS grid regions and average thicknesses. 
 
