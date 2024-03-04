@@ -16,7 +16,7 @@ K.set_image_data_format('channels_last')
 
 
 def resconv(inputlayer, outdim, name, res_connet=True, droprate=0.0, is_batchnorm=True,
-            BN_trainable=False, Drop_trainable=True, momentum=0.8):
+            Drop_trainable=True, momentum=0.8):
     '''
     :param inputlayer:
     :param outdim:
@@ -41,7 +41,7 @@ def resconv(inputlayer, outdim, name, res_connet=True, droprate=0.0, is_batchnor
 
 
 def resconv_bottleneck(inputlayer, outdim, name, res_connet=True, droprate=0.0, is_batchnorm=True,
-            BN_trainable=False, Drop_trainable=True, momentum=0.8):
+                       Drop_trainable=True, momentum=0.8):
     '''
     :param inputlayer:
     :param outdim:
