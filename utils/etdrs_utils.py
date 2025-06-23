@@ -1,26 +1,22 @@
 import os
-from copy import deepcopy
 
-import numpy as np
-import matplotlib.pyplot as plt
-from pydicom import read_file
-from skimage.measure import moments
 # from utils.plotting_utils import plot_segmentation_map
-import cv2
-import scipy
+import numpy as np
+from pydicom import read_file
 
 
 def plot_bool_mask(mask):
-    from tvtk.api import tvtk
     from mayavi import mlab
+    from tvtk.api import tvtk
+
     X, Y, Z = np.mgrid[-10:10:256j, -10:10:256j, -10:10:256j]
     data = mask.astype("float")
-    i = tvtk.ImageData(spacing = (1, 1, 1), origin = (0, 0, 0))
+    i = tvtk.ImageData(spacing=(1, 1, 1), origin=(0, 0, 0))
     i.point_data.scalars = data.ravel()
-    i.point_data.scalars.name = 'scalars'
+    i.point_data.scalars.name = "scalars"
     i.dimensions = data.shape
     mlab.pipeline.surface(i)
-    mlab.colorbar(orientation = 'vertical')
+    mlab.colorbar(orientation="vertical")
     mlab.show()
 
 
@@ -37,16 +33,24 @@ def create_circular_mask(h, w, center=None, radius=None):
     return mask
 
 
-tissues = {"1": "epiratinal_membrane",
-           "2": "neurosensory_retina", "3": "intraretinal_fluid", "4": "subretinal_fluid",
-           "5": "subretinal_hyperreflective_material", "6": "rpe", "7": "fibrovascular_ped",
-           "8": "drusen", "9": "posterior_hylaoid_membrane", "10": "choroid",
-           "13": "fibrosis"}
+tissues = {
+    "1": "epiratinal_membrane",
+    "2": "neurosensory_retina",
+    "3": "intraretinal_fluid",
+    "4": "subretinal_fluid",
+    "5": "subretinal_hyperreflective_material",
+    "6": "rpe",
+    "7": "fibrovascular_ped",
+    "8": "drusen",
+    "9": "posterior_hylaoid_membrane",
+    "10": "choroid",
+    "13": "fibrosis",
+}
 
 etdrs_regions = ["C0", "S2", "S1", "N1", "N2", "I1", "I2", "T1", "T2"]
 
 # labels to exclude from thickness
-thickness_exclusion = [0, 1,  9, 10, 11, 12, 14, 15]
+thickness_exclusion = [0, 1, 9, 10, 11, 12, 14, 15]
 
 
 def volume_spatial_grid(volume):
@@ -64,13 +68,14 @@ def volume_spatial_grid(volume):
 
 def thickness_spatial_grid(map, interpolate=False):
     """
-    @param map: thickness vectors
+    @param map: thickness vectors.
+
     @type map: arry
     @param interpolate: if to interpolate accross thickness grid
     @type interpolate: bool
     @return: 256,256 sized thickness grid
     @rtype: array
-    
+
     thickness_map = np.zeros([256, 256])
 
     # get B-scan locations
@@ -99,7 +104,9 @@ def thickness_spatial_grid(map, interpolate=False):
         for j in range(thickness_map.shape[1]):
             thickness_map[:, j][thickness_map[:, j] == 0] = np.nan
             nans, x = np.isnan(thickness_map[:, j]), lambda z: z.nonzero()[0]
-            thickness_map[:, j][nans] = np.interp(x(nans), x(~nans), thickness_map[:, j][~nans])
+            thickness_map[:, j][nans] = np.interp(
+                x(nans), x(~nans), thickness_map[:, j][~nans]
+            )
 
     return thickness_map
 
@@ -107,6 +114,7 @@ def thickness_spatial_grid(map, interpolate=False):
 def thickness_profiler(volume):
     """
     @param vol:
+
     @type vol:
     @return:
     @rtype:
@@ -125,8 +133,8 @@ def thickness_profiler(volume):
         b_scan = volume[i, :, :]
 
         for j in range(b_scan.shape[1]):
-            top = min(np.argwhere(b_scan[:, j]).reshape(-1), default = 0)
-            bottom = max(np.argwhere(b_scan[:, j]).reshape(-1), default = 0)
+            top = min(np.argwhere(b_scan[:, j]).reshape(-1), default=0)
+            bottom = max(np.argwhere(b_scan[:, j]).reshape(-1), default=0)
 
             # get pixel thickness
             thickness = np.abs(bottom - top)
@@ -138,9 +146,9 @@ def thickness_profiler(volume):
 
 def rpe_profiler(volume):
     map_positions = np.linspace(0, 255, volume.shape[0], dtype=np.int32)
-    rpe_map = np.zeros([volume.shape[1], volume.shape[2]], dtype = np.int32)
+    rpe_map = np.zeros([volume.shape[1], volume.shape[2]], dtype=np.int32)
     for i in range(volume.shape[0]):
-        neurosensory_retina = np.argwhere(np.sum(volume[i, :, :] == 2, axis = 0))
+        neurosensory_retina = np.argwhere(np.sum(volume[i, :, :] == 2, axis=0))
         if not neurosensory_retina.any():
             rpe_map[i, :] = 0
             continue
@@ -148,7 +156,7 @@ def rpe_profiler(volume):
         start, stop = np.min(neurosensory_retina), np.max(neurosensory_retina)
 
         rpe_bool = volume[i, :, :] == 6
-        rpe_presence = np.sum(rpe_bool, axis = 0)[start:stop]
+        rpe_presence = np.sum(rpe_bool, axis=0)[start:stop]
 
         # find absence of rpe
         rpe_map[map_positions[i], start:stop] = rpe_presence == 0
@@ -176,7 +184,8 @@ def rpe_profiler(volume):
 
 def laterality_string_frormatting(laterality):
     """
-    @param laterality: left or right eye
+    @param laterality: left or right eye.
+
     @type laterality: str
     @return: laterality written as Left ör Right
     @rtype: str
@@ -193,6 +202,7 @@ def laterality_string_frormatting(laterality):
 def get_dicom_pixel_measurement(dc):
     """
     @param dc:
+
     @type dc:
     @return:
     @rtype:
@@ -208,6 +218,7 @@ def get_dicom_pixel_measurement(dc):
 def get_pixel_2_volume_factors(dicom_path):
     """
     @param dicom_path:
+
     @type dicom_path:
     @return:
     @rtype:
@@ -219,17 +230,19 @@ def get_pixel_2_volume_factors(dicom_path):
         # load dicom header
         dicom_file = os.listdir(dicom_path)[0]
 
-        dc = read_file(os.path.join(dicom_path, dicom_file), stop_before_pixels = True)
+        dc = read_file(os.path.join(dicom_path, dicom_file), stop_before_pixels=True)
 
         # get resolution attribution
         y_resolution, x_resolution, slice_thickness = get_dicom_pixel_measurement(dc)
-    except:
-        print("no dicom or resolution data available, setting to default")
+    except Exception as e:
+        print(e, "no dicom or resolution data available, setting to default")
         y_resolution = 0.003872
         x_resolution = 0.012034
         slice_thickness = 0.128197
 
-    pixel_2_volume_mm3 = B_SCAN_RESIZE_FACTOR * y_resolution * x_resolution * slice_thickness
+    pixel_2_volume_mm3 = (
+        B_SCAN_RESIZE_FACTOR * y_resolution * x_resolution * slice_thickness
+    )
     pixel_height_2_mm = B_SCAN_RESIZE_FACTOR * y_resolution
     return pixel_2_volume_mm3, pixel_height_2_mm
 
@@ -262,49 +275,64 @@ class ETDRSUtils:
 
     def inner_disk(self):
         inner_ring_radius = int(self.height // 6) / 2
-        return create_circular_mask(h = self.height, w = self.width, center = None, radius = inner_ring_radius)
+        return create_circular_mask(
+            h=self.height, w=self.width, center=None, radius=inner_ring_radius
+        )
 
     def middle_disk(self):
         middle_ring_radius = int(self.height // 2) / 2
-        middle_disk = create_circular_mask(h = self.height, w = self.width, center = None, radius = middle_ring_radius)
+        middle_disk = create_circular_mask(
+            h=self.height, w=self.width, center=None, radius=middle_ring_radius
+        )
         middle_disk[self.inner_disk() == 1] = 0
         return middle_disk
 
     def outer_disk(self):
         outer_ring_radius = int(self.height // 1) / 2
-        outer_disk = create_circular_mask(h = self.height, w = self.width, center = None, radius = outer_ring_radius)
+        outer_disk = create_circular_mask(
+            h=self.height, w=self.width, center=None, radius=outer_ring_radius
+        )
         outer_disk[self.inner_disk() == 1] = 0
         outer_disk[self.middle_disk() == 1] = 0
         return outer_disk
 
     def make_volume_mask(self, mask):
-        return np.stack((mask,) * self.volume_scans, axis = 0)
+        return np.stack((mask,) * self.volume_scans, axis=0)
 
     def zones(self):
-        zones_dict = {"middle": self.middle_disk(), "outer": self.outer_disk(),
-                      "upper_right": self.upper_right(), "lower_left": self.lower_left(),
-                      "upper_left": self.upper_left(), "lower_right": self.lower_right()}
+        zones_dict = {
+            "middle": self.middle_disk(),
+            "outer": self.outer_disk(),
+            "upper_right": self.upper_right(),
+            "lower_left": self.lower_left(),
+            "upper_left": self.upper_left(),
+            "lower_right": self.lower_right(),
+        }
 
         # convert masks to 3d
-        #for key in zones_dict.keys():
+        # for key in zones_dict.keys():
         #    zones_dict[key] = self.make_volume_mask(zones_dict[key])
 
         # define mask combinations
-        rois = [("upper_left", "outer", "upper_right"),
-                ("upper_left", "middle", "upper_right"),
-                ("lower_right", "middle", "upper_right"),
-                ("lower_right", "outer", "upper_right"),
-                ("lower_right", "middle", "lower_left"),
-                ("lower_right", "outer", "lower_left"),
-                ("upper_left", "middle", "lower_left"),
-                ("upper_left", "outer", "lower_left")]
+        rois = [
+            ("upper_left", "outer", "upper_right"),
+            ("upper_left", "middle", "upper_right"),
+            ("lower_right", "middle", "upper_right"),
+            ("lower_right", "outer", "upper_right"),
+            ("lower_right", "middle", "lower_left"),
+            ("lower_right", "outer", "lower_left"),
+            ("upper_left", "middle", "lower_left"),
+            ("upper_left", "outer", "lower_left"),
+        ]
 
         # create 9 depth regions
-        self.etdrs_bool_grid["C0"] = self.inner_disk() #self.make_volume_mask(self.inner_disk())
+        self.etdrs_bool_grid[
+            "C0"
+        ] = self.inner_disk()  # self.make_volume_mask(self.inner_disk())
         for k, roi in enumerate(rois, 1):
-            self.etdrs_bool_grid[etdrs_regions[k]] = np.asarray(zones_dict[roi[0]] &
-                                                                zones_dict[roi[1]] &
-                                                                zones_dict[roi[2]])
+            self.etdrs_bool_grid[etdrs_regions[k]] = np.asarray(
+                zones_dict[roi[0]] & zones_dict[roi[1]] & zones_dict[roi[2]]
+            )
 
     def get_etdrs_stats(self):
         record_log = {}
@@ -347,7 +375,9 @@ class ETDRSUtils:
 
             # add all tissue types count for etdrs regions
             record_log[etdrs_region + "_" + "thickness_mean"] = thickness_mean
-            record_log[etdrs_region + "_" + "atropy_percentage"] = np.mean(atrophy_segment)
+            record_log[etdrs_region + "_" + "atropy_percentage"] = np.mean(
+                atrophy_segment
+            )
 
             region_total = 0
             # get all tissue counts for all tissues

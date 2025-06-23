@@ -1,11 +1,9 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import os
-import cv2
 
 
-class Map():
+class Map:
     def __init__(self, dicom, segmentations, dicom_path):
         self.dicom_path = dicom_path
         self.dicom = dicom
@@ -14,7 +12,8 @@ class Map():
 
     def crop_image(self, img, tol=0):
         """
-        :param img: 2d numpy array: thickenss map
+        :param img: 2d numpy array: thickenss map.
+
         :param tol: float: all values below will be cropped
         :return: numpy array; cropped images
         """
@@ -24,80 +23,79 @@ class Map():
             mask = img[:, :, 0] > tol
         else:
             mask = img > tol
-        return img[np.ix_( mask.any( 1 ), mask.any( 0 ) )]
+        return img[np.ix_(mask.any(1), mask.any(0))]
 
     def heidelberg_colormap(self):
-        '''
-        :return: matplotlib colormap as used y Heidelberg Heyex software
-        '''
+        """:return: matplotlib colormap as used y Heidelberg Heyex software."""
         from matplotlib.colors import LinearSegmentedColormap
+
         plt.figsize = (40, 40)
 
-        plt.close('all')
+        plt.close("all")
 
         cdict = {
-
-            'blue': ((0.0, 0.0, 0.0),  # black
-                     (0.1, 1.0, 1.0),  # purple
-                     (0.2, 1.0, 1.0),  # blue
-                     (0.3, 0.0, 0.0),  # green
-                     (0.4, 0.0, 0.0),  # yellow
-                     (0.55, 0.0, 0.0),  # red
-                     (0.65, 1.0, 1.0),  # white
-                     (1.0, 1.0, 1.0)),  # white
-
-            'green': ((0.0, 0.0, 0.0),  # black
-                      (0.1, 0.0, 0.0),  # purple
-                      (0.2, 0.0, 0.0),  # blue
-                      (0.3, 1.0, 1.0),  # green
-                      (0.4, 1.0, 1.0),  # yellow
-                      (0.55, 0.0, 0.0),  # red
-                      (0.65, 1.0, 1.0),  # white
-                      (1.0, 1.0, 1.0)),
-
-            'red': ((0.0, 0.0, 0.0),  # black
-                    (0.1, 1.0, 1.0),  # purple
-                    (0.2, 0.0, 0.0),  # blue
-                    (0.3, 0.0, 0.0),  # green
-                    (0.4, 1.0, 1.0),  # yellow
-                    (0.55, 1.0, 1.0),  # red
-                    (0.65, 1.0, 1.0),  # white
-                    (1.0, 1.0, 1.0)),
+            "blue": (
+                (0.0, 0.0, 0.0),  # black
+                (0.1, 1.0, 1.0),  # purple
+                (0.2, 1.0, 1.0),  # blue
+                (0.3, 0.0, 0.0),  # green
+                (0.4, 0.0, 0.0),  # yellow
+                (0.55, 0.0, 0.0),  # red
+                (0.65, 1.0, 1.0),  # white
+                (1.0, 1.0, 1.0),
+            ),  # white
+            "green": (
+                (0.0, 0.0, 0.0),  # black
+                (0.1, 0.0, 0.0),  # purple
+                (0.2, 0.0, 0.0),  # blue
+                (0.3, 1.0, 1.0),  # green
+                (0.4, 1.0, 1.0),  # yellow
+                (0.55, 0.0, 0.0),  # red
+                (0.65, 1.0, 1.0),  # white
+                (1.0, 1.0, 1.0),
+            ),
+            "red": (
+                (0.0, 0.0, 0.0),  # black
+                (0.1, 1.0, 1.0),  # purple
+                (0.2, 0.0, 0.0),  # blue
+                (0.3, 0.0, 0.0),  # green
+                (0.4, 1.0, 1.0),  # yellow
+                (0.55, 1.0, 1.0),  # red
+                (0.65, 1.0, 1.0),  # white
+                (1.0, 1.0, 1.0),
+            ),
         }
 
-        cm_heidelberg = LinearSegmentedColormap( 'bgr', cdict )
+        cm_heidelberg = LinearSegmentedColormap("bgr", cdict)
 
         return cm_heidelberg
 
     def plot_thickness_map(self, save_path):
         """
         :param save_path: str;
+
         :return:
         """
         cm_heidelberg = self.heidelberg_colormap()
 
-        plt.figure(figsize = (5, 5))
+        plt.figure(figsize=(5, 5))
 
         # crop black margin
-        thickness_map = self.crop_image(self.thickness_map, tol = 0)
+        thickness_map = self.crop_image(self.thickness_map, tol=0)
 
         # mask values below 100
-        thickness_map = np.ma.masked_where(thickness_map < 100,
-                                           thickness_map)
-
+        thickness_map = np.ma.masked_where(thickness_map < 100, thickness_map)
 
         cmap = cm_heidelberg
-        cmap.set_bad(color = 'black')
+        cmap.set_bad(color="black")
 
-        plt.imshow(thickness_map, cmap = cmap, vmin = 100, vmax = 750)
+        plt.imshow(thickness_map, cmap=cmap, vmin=100, vmax=750)
         plt.axis("off")
         plt.savefig(save_path)
         plt.close()
 
     def get_iterable_dimension(self):
-        """
-        :return: str: x_iter, y_iter
-        """
+        """:return: str: x_iter, y_iter."""
         y_iter = None
         x_iter = None
 
@@ -112,7 +110,8 @@ class Map():
 
     def oct_pixel_to_mu_m(self, depth_vector, iter, x_cord, y_cord):
         """
-        :param depth_vector: array; thickness meassurement in floats
+        :param depth_vector: array; thickness meassurement in floats.
+
         :param iter: segmentation idx
         :param x_cord: str; itarable if is dimension of thickness measure
         :param y_cord: str; itarable if is dimension of thickness measure
@@ -131,32 +130,34 @@ class Map():
         return np.multiply(depth_vector, thickness_scale * 1000)
 
     def get_position_series(self):
-        """
-        :return: int: return start end position for x and y axis
-        """
-        startx_pos = self.dicom.record_lookup.x_starts.reset_index( drop = True ).fillna(0)
-        endx_pos = self.dicom.record_lookup.x_ends.reset_index( drop = True ).fillna(0)
-        starty_pos = self.dicom.record_lookup.y_starts.reset_index( drop = True ).fillna(0)
-        endy_pos = self.dicom.record_lookup.y_ends.reset_index( drop = True ).fillna(0)
+        """:return: int: return start end position for x and y axis."""
+        startx_pos = self.dicom.record_lookup.x_starts.reset_index(drop=True).fillna(0)
+        endx_pos = self.dicom.record_lookup.x_ends.reset_index(drop=True).fillna(0)
+        starty_pos = self.dicom.record_lookup.y_starts.reset_index(drop=True).fillna(0)
+        endy_pos = self.dicom.record_lookup.y_ends.reset_index(drop=True).fillna(0)
         return startx_pos, endx_pos, starty_pos, endy_pos
 
     def get_depth_vector(self, img):
         """
-        :param img: numpy array: segmented oct frame
+        :param img: numpy array: segmented oct frame.
+
         :return:
         """
+
         def find_nearest_idx(array, value):
             """
-            :param array: non zero indices
+            :param array: non zero indices.
+
             :param value: values of index last / first in zero patch
             :return: float: closest index in non zero array
             """
-            idx = ((array - value)**2).argmin()
+            idx = ((array - value) ** 2).argmin()
             return idx
 
         def get_zero_patches(idx_zero):
             """
-            function: extract patches of depth vector indices for which values are zero and
+            Function: extract patches of depth vector indices for which values are zero and.
+
             imputation is needed
             :param idx_zero: array; indices with zero entries in depth vector
             :return:
@@ -170,7 +171,7 @@ class Map():
             shifted_indices[1:] = idx_zero
 
             # retrieve patch log vector
-            differences = np.subtract(idx_zero, shifted_indices[0:-1] )[1:]
+            differences = np.subtract(idx_zero, shifted_indices[0:-1])[1:]
 
             # retrieve indices where zero patches start and end, in case of multiple patches
             indices = np.where(differences > 1)
@@ -178,13 +179,16 @@ class Map():
 
             # if there are multiple zero patches
             if indices[0].size != 0:
-
                 # extract first zero patch
-                zero_patches.append(idx_zero[np.where(idx_zero <= idx_zero[indices[0][0]])])
+                zero_patches.append(
+                    idx_zero[np.where(idx_zero <= idx_zero[indices[0][0]])]
+                )
 
                 # extract the following zero patches
                 for i in range(indices[0][:].shape[0], 0, -1):
-                    zero_patches.append(idx_zero[np.where(idx_zero > idx_zero[indices[0][i - 1]])])
+                    zero_patches.append(
+                        idx_zero[np.where(idx_zero > idx_zero[indices[0][i - 1]])]
+                    )
 
             # if there is only one zero patch, then append it
             if indices[0].size == 0:
@@ -194,8 +198,7 @@ class Map():
 
         # create zero depth vector
         depth_vector = np.zeros(img.shape[1])
-        for i in range( 0, img.shape[1] ):
-
+        for i in range(0, img.shape[1]):
             # get non zero indices of oct frame
             layer = np.argwhere(img[:, i])
 
@@ -214,7 +217,6 @@ class Map():
 
         # check if list is empty = no zero patches
         if len(idx_zero) != 0:
-
             # get list with seperate zero patches
             zero_patches = get_zero_patches(idx_zero)
 
@@ -225,7 +227,10 @@ class Map():
 
                 # TODO: find better imputation methods
                 # impute zero patch with average values
-                interpolation = (depth_vector[idx_nonzero[closest_min]] + depth_vector[idx_nonzero[closest_max]]) / 2
+                interpolation = (
+                    depth_vector[idx_nonzero[closest_min]]
+                    + depth_vector[idx_nonzero[closest_max]]
+                ) / 2
 
                 # impute
                 depth_vector[patch] = interpolation
@@ -233,9 +238,7 @@ class Map():
         return depth_vector
 
     def depth_grid(self, interpolation):
-        """
-        :return:
-        """
+        """:return:"""
         # get fundus dimension
         depth_grid_dim = (768, 768)
 
@@ -244,7 +247,6 @@ class Map():
 
         # iterate through all segmentations
         for i in range(0, len(self.segmentations)):
-
             # calculate 1D depth vector from segmentation map
             d_v = self.get_depth_vector(self.segmentations[i])
 
@@ -256,7 +258,6 @@ class Map():
 
             try:
                 if y_cord == "iterable":
-
                     # set assert indices are ints
                     x_start = int(startx_pos[i])
                     x_end = int(endx_pos[i])
@@ -265,7 +266,7 @@ class Map():
                     # TODO: find better way to merge depth vector dimension with x, y starting positions
                     # assert d_v has same width as x_end -x_start
                     if d_v.shape[0] > (x_end - x_start):
-                        d_v = d_v[0:x_end - x_start]
+                        d_v = d_v[0 : x_end - x_start]
                     if d_v.shape[0] < (x_end - x_start):
                         difference = (x_end - x_start) - d_v.shape[0]
                         d_v = np.append(d_v, np.zeros(int(difference)))
@@ -276,7 +277,6 @@ class Map():
 
                     grid[y_start, x_start:x_end] = d_v
                 if x_cord == "iterable":
-
                     # assert indices are ints
                     y_start = int(starty_pos[i])
                     y_end = int(endy_pos[i])
@@ -284,44 +284,46 @@ class Map():
 
                     # assert d_v has same width as x_end -x_start
                     if d_v.shape[0] > (y_start - y_end):
-                        d_v = d_v[0:y_start - y_end]
+                        d_v = d_v[0 : y_start - y_end]
                     if d_v.shape[0] < (y_start - y_end):
                         difference = (y_start - y_end) - d_v.shape[0]
-                        d_v = np.append( d_v, np.zeros( difference ) )
+                        d_v = np.append(d_v, np.zeros(difference))
 
                     # shift indices when laterilty changes to "L"
                     grid[y_end:y_start, x_start] = d_v
-            except:
+            except Exception:
                 # TODO: integrate logging for exact reason why a thickness map fails to be calculated
-                print( "COULD NOT CALCULATE GRID" )
-                print( self.dicom.record_lookup.record_id )
+                print("COULD NOT CALCULATE GRID")
+                print(self.dicom.record_lookup.record_id)
 
         # set zero to nan: interpolate missing values
         grid[grid == 0] = np.nan
 
         # TODO: (1) implement intepolation in numpy / scipy
         # interpolate depending on which axis the depth vector is filled in
-        grid_pd_int = pd.DataFrame(grid).interpolate(limit_direction = 'both',
-                                                     axis = 0, method=interpolation)
+        grid_pd_int = pd.DataFrame(grid).interpolate(
+            limit_direction="both", axis=0, method=interpolation
+        )
         if y_cord == "iterable":
             # set all areas outside of measurements to 0
             min_starty = int(min(starty_pos.iloc[1:]))
             max_starty = int(max(starty_pos.iloc[1:]))
 
-            grid_pd_int[max_starty:grid_pd_int.shape[0]] = 0
+            grid_pd_int[max_starty : grid_pd_int.shape[0]] = 0
             grid_pd_int[0:min_starty] = 0
 
             # set potential na values to zero
             grid_pd_int = grid_pd_int.fillna(0)
 
         if x_cord == "iterable":
-            grid_pd_int = pd.DataFrame(grid).interpolate(limit_direction = 'both',
-                                                         axis = 1, method=interpolation)
+            grid_pd_int = pd.DataFrame(grid).interpolate(
+                limit_direction="both", axis=1, method=interpolation
+            )
             # set all areas outside of measurements to 0
             min_startx = int(min(startx_pos.iloc[1:]))
             max_startx = int(max(startx_pos.iloc[1:]))
 
-            grid_pd_int.loc[:, max_startx:grid_pd_int.shape[1]] = 0
+            grid_pd_int.loc[:, max_startx : grid_pd_int.shape[1]] = 0
             grid_pd_int.loc[:, 0:min_startx] = 0
 
             # set potential na values to zero

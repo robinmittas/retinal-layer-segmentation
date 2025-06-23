@@ -1,13 +1,23 @@
-from tensorflow.keras.layers import Activation, Reshape, Lambda, dot, add
-from tensorflow.keras.layers import Conv1D, Conv2D, Conv3D
-from tensorflow.keras.layers import MaxPool1D
 from tensorflow.keras import backend as K
+from tensorflow.keras.layers import (
+    Activation,
+    Conv1D,
+    Conv2D,
+    Conv3D,
+    Lambda,
+    MaxPool1D,
+    Reshape,
+    add,
+    dot,
+)
 
 
-def non_local_block(ip, intermediate_dim=None, compression=2,
-                    mode='embedded', add_residual=True):
+def non_local_block(
+    ip, intermediate_dim=None, compression=2, mode="embedded", add_residual=True
+):
     """
     Adds a Non-Local block for self attention to the input tensor.
+
     Input tensor can be or rank 3 (temporal), 4 (spatial) or 5 (spatio-temporal).
 
     Arguments:
@@ -28,11 +38,13 @@ def non_local_block(ip, intermediate_dim=None, compression=2,
     Returns:
         a tensor of same shape as input
     """
-    channel_dim = 1 if K.image_data_format() == 'channels_first' else -1
+    channel_dim = 1 if K.image_data_format() == "channels_first" else -1
     ip_shape = K.int_shape(ip)
 
-    if mode not in ['gaussian', 'embedded', 'dot', 'concatenate']:
-        raise ValueError('`mode` must be one of `gaussian`, `embedded`, `dot` or `concatenate`')
+    if mode not in ["gaussian", "embedded", "dot", "concatenate"]:
+        raise ValueError(
+            "`mode` must be one of `gaussian`, `embedded`, `dot` or `concatenate`"
+        )
 
     if compression is None:
         compression = 1
@@ -61,7 +73,9 @@ def non_local_block(ip, intermediate_dim=None, compression=2,
             batchsize, dim1, dim2, dim3, channels = ip_shape
 
     else:
-        raise ValueError('Input dimension has to be either 3 (temporal), 4 (spatial) or 5 (spatio-temporal)')
+        raise ValueError(
+            "Input dimension has to be either 3 (temporal), 4 (spatial) or 5 (spatio-temporal)"
+        )
 
     # verify correct intermediate dimension specified
     if intermediate_dim is None:
@@ -74,15 +88,17 @@ def non_local_block(ip, intermediate_dim=None, compression=2,
         intermediate_dim = int(intermediate_dim)
 
         if intermediate_dim < 1:
-            raise ValueError('`intermediate_dim` must be either `None` or positive integer greater than 1.')
+            raise ValueError(
+                "`intermediate_dim` must be either `None` or positive integer greater than 1."
+            )
 
-    if mode == 'gaussian':  # Gaussian instantiation
+    if mode == "gaussian":  # Gaussian instantiation
         x1 = Reshape((-1, channels))(ip)  # xi
         x2 = Reshape((-1, channels))(ip)  # xj
         f = dot([x1, x2], axes=2)
-        f = Activation('softmax')(f)
+        f = Activation("softmax")(f)
 
-    elif mode == 'dot':  # Dot instantiation
+    elif mode == "dot":  # Dot instantiation
         # theta path
         theta = _convND(ip, rank, intermediate_dim)
         theta = Reshape((-1, intermediate_dim))(theta)
@@ -96,10 +112,10 @@ def non_local_block(ip, intermediate_dim=None, compression=2,
         size = K.int_shape(f)
 
         # scale the values to make it size invariant
-        f = Lambda(lambda z: (1. / float(size[-1])) * z)(f)
+        f = Lambda(lambda z: (1.0 / float(size[-1])) * z)(f)
 
-    elif mode == 'concatenate':  # Concatenation instantiation
-        raise NotImplementedError('Concatenate model has not been implemented yet')
+    elif mode == "concatenate":  # Concatenation instantiation
+        raise NotImplementedError("Concatenate model has not been implemented yet")
 
     else:  # Embedded Gaussian instantiation
         # theta path
@@ -115,13 +131,13 @@ def non_local_block(ip, intermediate_dim=None, compression=2,
             phi = MaxPool1D(compression)(phi)
 
         f = dot([theta, phi], axes=2)
-        f = Activation('softmax')(f)
+        f = Activation("softmax")(f)
 
     # g path
     g = _convND(ip, rank, intermediate_dim)
     g = Reshape((-1, intermediate_dim))(g)
 
-    if compression > 1 and mode == 'embedded':
+    if compression > 1 and mode == "embedded":
         # shielded computation
         g = MaxPool1D(compression)(g)
 
@@ -156,9 +172,23 @@ def _convND(ip, rank, channels):
     assert rank in [3, 4, 5], "Rank of input must be 3, 4 or 5"
 
     if rank == 3:
-        x = Conv1D(channels, 1, padding='same', use_bias=False, kernel_initializer='he_normal')(ip)
+        x = Conv1D(
+            channels, 1, padding="same", use_bias=False, kernel_initializer="he_normal"
+        )(ip)
     elif rank == 4:
-        x = Conv2D(channels, (1, 1), padding='same', use_bias=False, kernel_initializer='he_normal')(ip)
+        x = Conv2D(
+            channels,
+            (1, 1),
+            padding="same",
+            use_bias=False,
+            kernel_initializer="he_normal",
+        )(ip)
     else:
-        x = Conv3D(channels, (1, 1, 1), padding='same', use_bias=False, kernel_initializer='he_normal')(ip)
+        x = Conv3D(
+            channels,
+            (1, 1, 1),
+            padding="same",
+            use_bias=False,
+            kernel_initializer="he_normal",
+        )(ip)
     return x

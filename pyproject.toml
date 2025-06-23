@@ -1,0 +1,33 @@
+[project]
+authors = [
+  {name = "Robin Mittas", email = "robin.mittas@holcim.com"},
+]
+maintainers = [
+  {name = "Robin Mittas", email = "robin.mittas@holcim.com"}
+]
+
+description = "Order slot optimization: Suggestion for order start times for busy & fully booked days"
+readme = "readme.md"
+
+[project.urls]
+Drive = "https://drive.google.com/drive/folders/1n44EgDB8K-bDWrOBOyle5jq-erLKXiR3"
+Repository = "https://bitbucket.org/lvnd/order_slot_optimization.git"
+
+[tool.nbqa.config]
+addopts = []
+black = ["--line-length=88"]
+isort = ["--profile=black"]
+
+[tool.isort]
+profile = "black"
+
+[tool.ruff]
+line-length = 88
+
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google" # Or "numpy", or "pep257"

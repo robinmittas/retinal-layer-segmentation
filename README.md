@@ -3,8 +3,8 @@ This repository consists of code to segment 3 retinal layers (and the background
 
 https://www.thieme-connect.de/products/ejournals/pdf/10.1055/a-2227-3742.pdf
 
-We used 2D slides of OCT scans as Input from healthy patients with the eventual goal of segmenting the layers of IRD (inherited retinal diseases) patients. 
-Finally, the repository contains code to calculate Thickness maps and ETDRS grid regions and average thicknesses. 
+We used 2D slides of OCT scans as Input from healthy patients with the eventual goal of segmenting the layers of IRD (inherited retinal diseases) patients.
+Finally, the repository contains code to calculate Thickness maps and ETDRS grid regions and average thicknesses.
 
 # Colab Notebooks
 You can also run the code within these Colab notebooks. Here, we have included links to two Notebooks, which depict our final model setup. Please adjust the Runtime type to GPU to have a faster computation time.
@@ -82,4 +82,3 @@ IRD = inherited retinal disease
 This repository contains code snippets from the following two repositories:
 - https://github.com/yu02019/BEN (Model definitions)
 - https://github.com/theislab/LODE/tree/master/ (Thickness map calculations)
-
