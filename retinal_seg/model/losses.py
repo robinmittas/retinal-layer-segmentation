@@ -9,8 +9,9 @@ y_pred: softmax model output           (batch, H, W, num_classes), float32
 from __future__ import annotations
 
 import tensorflow as tf
-from tensorflow.keras import backend as K
-from tensorflow.keras.losses import binary_crossentropy, categorical_crossentropy
+import keras
+from keras import backend as K
+from keras.losses import binary_crossentropy, categorical_crossentropy
 
 from retinal_seg.config import CLASS_WEIGHTS, DICE_SMOOTH, NUM_CLASSES
 
@@ -230,7 +231,7 @@ def focal_tversky_loss(
     Returns:
         Scalar focal Tversky loss of dtype float32.
     """
-    return 1.0 - K.pow(tversky(y_true, y_pred), gamma)
+    return 1.0 - keras.ops.power(tversky(y_true, y_pred), gamma)
 
 
 # ------------------------------------------------------------------

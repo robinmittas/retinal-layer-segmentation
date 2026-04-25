@@ -10,7 +10,7 @@ from typing import Dict, Tuple
 import cv2
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import GaussianNoise
+from keras.layers import GaussianNoise
 
 from retinal_seg.config import (
     IMG_HEIGHT,

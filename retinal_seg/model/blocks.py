@@ -6,9 +6,9 @@ References:
 """
 from __future__ import annotations
 
-import tensorflow as tf
-from tensorflow.keras import backend as K
-from tensorflow.keras.layers import (
+import keras
+from keras import backend as K
+from keras.layers import (
     Activation,
     Add,
     BatchNormalization,
@@ -159,7 +159,7 @@ def non_local_block(
         phi = Reshape((-1, intermediate_dim))(_conv_nd(ip, rank, intermediate_dim))
         f = dot([theta, phi], axes=2)
         size = K.int_shape(f)
-        f = tf.keras.layers.Lambda(lambda z: z / float(size[-1]))(f)
+        f = keras.layers.Lambda(lambda z: z / float(size[-1]))(f)
 
     elif mode == "concatenate":
         raise NotImplementedError("Concatenate mode is not yet implemented.")

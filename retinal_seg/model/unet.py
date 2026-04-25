@@ -14,10 +14,10 @@ from __future__ import annotations
 
 from typing import Callable, List, Optional, Union
 
-import tensorflow as tf
-from tensorflow.keras import backend as K
-from tensorflow.keras.layers import Conv2D, Conv2DTranspose, Input, MaxPooling2D, concatenate
-from tensorflow.keras.models import Model
+import keras
+from keras import backend as K
+from keras.layers import Conv2D, Conv2DTranspose, Input, MaxPooling2D, concatenate
+from keras.models import Model
 
 from retinal_seg.model.blocks import non_local_block, resconv
 from retinal_seg.model.losses import dice_coef, weighted_ce_dice

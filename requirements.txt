@@ -1,5 +1,6 @@
 # Core ML / DL
-tensorflow>=2.13.0,<2.16     # 2.15 is the last release before the Keras 3 split
+tensorflow>=2.13.0
+keras>=3.0
 numpy>=1.23.0
 
 # Image processing
