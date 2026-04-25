@@ -1,7 +1,21 @@
-beautifulsoup4
-pydicom
-keras==2.4.3
-cv2
-matplotlib==3.3.4
-numpy==1.18.5
-tensorflow==2.3.4
+# Core ML / DL
+tensorflow>=2.13.0,<2.16     # 2.15 is the last release before the Keras 3 split
+numpy>=1.23.0
+
+# Image processing
+opencv-python-headless>=4.8.0  # headless avoids Qt/GUI dependency on servers
+
+# Visualisation
+matplotlib>=3.7.0
+
+# DICOM / medical imaging
+pydicom>=2.4.0
+SimpleITK>=2.3.0
+
+# Data / XML parsing
+pandas>=2.0.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
+# Utilities
+tqdm>=4.65.0

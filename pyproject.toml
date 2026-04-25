@@ -1,33 +1,54 @@
 [project]
+name = "retinal-layer-segmentation"
+version = "0.1.0"
+description = "Multi-class retinal layer segmentation from Heidelberg Spectralis OCT volumes"
+readme = "README.md"
+requires-python = ">=3.10"
 authors = [
-  {name = "Robin Mittas", email = "robin.mittas@holcim.com"},
-]
-maintainers = [
-  {name = "Robin Mittas", email = "robin.mittas@holcim.com"}
+  { name = "Robin Mittas", email = "robin.mittas@googlemail.com" },
 ]
 
-description = "Order slot optimization: Suggestion for order start times for busy & fully booked days"
-readme = "readme.md"
+dependencies = [
+  "tensorflow>=2.13.0,<2.16",
+  "numpy>=1.23.0",
+  "opencv-python-headless>=4.8.0",
+  "matplotlib>=3.7.0",
+  "pydicom>=2.4.0",
+  "SimpleITK>=2.3.0",
+  "pandas>=2.0.0",
+  "beautifulsoup4>=4.12.0",
+  "lxml>=4.9.0",
+  "tqdm>=4.65.0",
+]
 
 [project.urls]
-Drive = "https://drive.google.com/drive/folders/1n44EgDB8K-bDWrOBOyle5jq-erLKXiR3"
-Repository = "https://bitbucket.org/lvnd/order_slot_optimization.git"
+Repository = "https://github.com/robinmittas/retinal-layer-segmentation"
 
-[tool.nbqa.config]
-addopts = []
-black = ["--line-length=88"]
-isort = ["--profile=black"]
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
 
-[tool.isort]
-profile = "black"
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["retinal_seg*"]
+
+# ------------------------------------------------------------------
+# Code quality tooling
+# ------------------------------------------------------------------
 
 [tool.ruff]
-line-length = 88
-
+line-length = 100
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+
 [tool.ruff.lint.pydocstyle]
-convention = "google" # Or "numpy", or "pep257"
+convention = "google"
+
+[tool.isort]
+profile = "black"
+line_length = 100
