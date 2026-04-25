@@ -46,7 +46,7 @@ def resconv(
         (e.g. every encoder/decoder transition).
 
     Args:
-        input_layer: Input tensor.
+        input_layer: Input tensor of dtype float32, shape (batch, H, W, in_channels).
         out_dim: Number of output feature maps for both Conv2D layers.
         name: Base name prefix; layers are named <name>_1 and <name>_2.
         residual: If True, adds input_layer to the output (skip connection).
@@ -56,8 +56,8 @@ def resconv(
         momentum: BatchNormalization momentum.
 
     Returns:
-        Output tensor of shape (H, W, out_dim), or same shape as input_layer
-        when residual=True.
+        Tensor of dtype float32, shape (batch, H, W, out_dim), or same shape
+        as input_layer when residual=True.
     """
     x = Conv2D(
         out_dim, 3, activation="elu", padding="same",
@@ -96,7 +96,8 @@ def non_local_block(
     rank-5 (spatio-temporal) inputs.
 
     Args:
-        ip: Input tensor of rank 3, 4, or 5.
+        ip: Input tensor of dtype float32; rank 3 (batch, L, C),
+            rank 4 (batch, H, W, C), or rank 5 (batch, D, H, W, C).
         intermediate_dim: Channels in the intermediate projection.
             Defaults to channels // 2 (minimum 1).
         compression: Spatial compression factor applied to the key/value
@@ -105,7 +106,7 @@ def non_local_block(
         add_residual: If True, adds the original input to the output.
 
     Returns:
-        Tensor of the same shape as ip.
+        Tensor of dtype float32 with the same shape as ip.
 
     Raises:
         ValueError: If mode is not recognised or input rank is not 3–5.
@@ -209,12 +210,12 @@ def _conv_nd(ip: tf.Tensor, rank: int, channels: int) -> tf.Tensor:
     """Apply a pointwise (1×…×1) convolution matching the spatial rank.
 
     Args:
-        ip: Input tensor.
+        ip: Input tensor of dtype float32.
         rank: Spatial rank of ip (3, 4, or 5).
         channels: Number of output channels.
 
     Returns:
-        Output tensor with the specified number of channels.
+        Tensor of dtype float32 with `channels` feature maps.
     """
     kwargs = dict(padding="same", use_bias=False, kernel_initializer=_KERNEL_INIT)
     if rank == 3:
