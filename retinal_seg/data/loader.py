@@ -65,7 +65,7 @@ def read_npy_file(
         train: If True, applies Gaussian noise augmentation to the image.
 
     Returns:
-        Tuple of (image, label) float32 tensors.
+        Tuple of (image, label) tensors, both dtype float32.
             image shape: (IMG_HEIGHT, IMG_WIDTH, 1)
             label shape: (IMG_HEIGHT, IMG_WIDTH, NUM_CLASSES)
     """
@@ -199,6 +199,42 @@ def build_datasets(
     train_map, val_map, test_map = train_val_test_split(
         x_y_map, val_ratio=val_ratio, test_ratio=test_ratio
     )
+    train_ds = _make_tf_dataset(
+        list(train_map.keys()), list(train_map.values()),
+        train=True, batch_size=batch_size, shuffle=True,
+    )
+    val_ds = _make_tf_dataset(
+        list(val_map.keys()), list(val_map.values()),
+        train=False, batch_size=batch_size, shuffle=False,
+    )
+    test_ds = _make_tf_dataset(
+        list(test_map.keys()), list(test_map.values()),
+        train=False, batch_size=batch_size, shuffle=False,
+    )
+    return train_ds, val_ds, test_ds
+
+
+def datasets_from_maps(
+    train_map: Dict[str, str],
+    val_map: Dict[str, str],
+    test_map: Dict[str, str],
+    batch_size: int = 8,
+) -> Tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]:
+    """Create train/val/test tf.data.Datasets from pre-split path dicts.
+
+    Use this when you have already partitioned paths into train/val/test
+    (e.g. after custom subset selection in a notebook) and just need the
+    tf.data pipeline.
+
+    Args:
+        train_map: Dict mapping training OCT image paths to label paths.
+        val_map: Dict mapping validation OCT image paths to label paths.
+        test_map: Dict mapping test OCT image paths to label paths.
+        batch_size: Number of samples per batch.
+
+    Returns:
+        Tuple of (train_dataset, val_dataset, test_dataset).
+    """
     train_ds = _make_tf_dataset(
         list(train_map.keys()), list(train_map.values()),
         train=True, batch_size=batch_size, shuffle=True,

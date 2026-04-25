@@ -1,10 +1,89 @@
 # retina-segmentation
-This repository consists of code to segment 3 retinal layers (and the background, and outer borders), i.e. ILM-OPL-HFL, ONL, and BMEIS-OB-RPE. To see how to train the model, refer to the `notebooks` folders. Further, this repository consists of code to reproduce the results of the paper "Deep Learning based retinal layer segmentation in optical coherence tomography scans of patients with inherited retinal diseases" which was published and accepted in "Klinische Monatsblätter für Augenheilkunde".
 
-https://www.thieme-connect.de/products/ejournals/pdf/10.1055/a-2227-3742.pdf
+This repository contains code to segment 3 retinal layers (plus background and outer borders): ILM-OPL-HFL, ONL, and BMEIS-OB-RPE. It reproduces results from the paper:
 
-We used 2D slides of OCT scans as Input from healthy patients with the eventual goal of segmenting the layers of IRD (inherited retinal diseases) patients.
-Finally, the repository contains code to calculate Thickness maps and ETDRS grid regions and average thicknesses.
+> **Deep Learning based retinal layer segmentation in optical coherence tomography scans of patients with inherited retinal diseases**
+> *Klinische Monatsblätter für Augenheilkunde* — https://www.thieme-connect.de/products/ejournals/pdf/10.1055/a-2227-3742.pdf
+
+2D B-scans from Heidelberg Spectralis OCT volumes are used as input. The codebase also includes ETDRS grid analysis and thickness map computation.
+
+---
+
+## Setup
+
+### Prerequisites
+
+- Python 3.10 or 3.11
+- A CUDA-capable GPU is strongly recommended for training
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/robinmittas/retinal-layer-segmentation.git
+cd retinal-layer-segmentation
+```
+
+### 2. Create and activate a virtual environment
+
+```bash
+python -m venv .venv
+source .venv/bin/activate        # macOS / Linux
+# .venv\Scripts\activate         # Windows
+```
+
+### 3. Install the package and dependencies
+
+```bash
+pip install --upgrade pip
+pip install -e .
+```
+
+This installs the `retinal_seg` package in editable mode along with all dependencies listed in `requirements.txt`.
+
+### 4. Verify the installation
+
+```python
+from retinal_seg.model.unet import build_unet
+model = build_unet(img_height=496, img_width=512, n_classes=4)
+model.summary()
+```
+
+---
+
+## Usage
+
+### Train a model
+
+```python
+from retinal_seg.data.loader import build_datasets
+from retinal_seg.model.unet import build_unet
+from retinal_seg.config import IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS, NUM_CLASSES, BATCH_SIZE, EPOCHS
+
+# x_y_map: dict mapping OCT .npy paths → segmentation .npy paths
+train_ds, val_ds, test_ds = build_datasets(x_y_map, batch_size=BATCH_SIZE)
+
+model = build_unet(
+    img_height=IMG_HEIGHT,
+    img_width=IMG_WIDTH,
+    img_channels=IMG_CHANNELS,
+    n_classes=NUM_CLASSES,
+)
+model.fit(train_ds, validation_data=val_ds, epochs=EPOCHS)
+```
+
+### Compute an ETDRS thickness report
+
+```python
+from retinal_seg.analysis.etdrs import ETDRSUtils
+
+utils = ETDRSUtils("path/to/volume.npy")
+stats = utils.get_etdrs_stats()
+# stats is a flat dict with keys like 'C0_thickness_mean', 'S1_neurosensory_retina', …
+```
+
+See `notebooks/` for end-to-end training, transfer learning, domain adaptation, and ETDRS analysis examples.
+
+---
 
 # Colab Notebooks
 You can also run the code within these Colab notebooks. Here, we have included links to two Notebooks, which depict our final model setup. Please adjust the Runtime type to GPU to have a faster computation time.

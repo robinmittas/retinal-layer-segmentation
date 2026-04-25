@@ -23,11 +23,11 @@ def dice_coef(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     """Global Dice coefficient across all classes (flattened).
 
     Args:
-        y_true: One-hot ground-truth tensor.
-        y_pred: Softmax prediction tensor.
+        y_true: One-hot ground-truth of dtype float32, shape (batch, H, W, C).
+        y_pred: Softmax prediction of dtype float32, shape (batch, H, W, C).
 
     Returns:
-        Scalar Dice coefficient in [0, 1].
+        Scalar Dice coefficient of dtype float32 in [0, 1].
     """
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
@@ -41,11 +41,11 @@ def dice_coef_per_class(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     """Macro-averaged Dice coefficient computed per class.
 
     Args:
-        y_true: One-hot ground-truth (batch, H, W, C).
-        y_pred: Softmax predictions   (batch, H, W, C).
+        y_true: One-hot ground-truth of dtype float32, shape (batch, H, W, C).
+        y_pred: Softmax predictions of dtype float32, shape (batch, H, W, C).
 
     Returns:
-        Scalar mean Dice across NUM_CLASSES classes.
+        Scalar mean Dice of dtype float32 across NUM_CLASSES classes.
     """
     scores = []
     for idx in range(NUM_CLASSES):
@@ -66,11 +66,11 @@ def dice_loss(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     """Soft Dice loss: 1 − dice_coef (all classes, flattened).
 
     Args:
-        y_true: One-hot ground-truth tensor.
-        y_pred: Softmax prediction tensor.
+        y_true: One-hot ground-truth of dtype float32, shape (batch, H, W, C).
+        y_pred: Softmax prediction of dtype float32, shape (batch, H, W, C).
 
     Returns:
-        Scalar loss in [0, 1].
+        Scalar loss of dtype float32 in [0, 1].
     """
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
@@ -86,11 +86,11 @@ def dice_loss_inner_layers(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     """Soft Dice loss computed only on non-background classes (index 1+).
 
     Args:
-        y_true: One-hot ground-truth (batch, H, W, C).
-        y_pred: Softmax predictions   (batch, H, W, C).
+        y_true: One-hot ground-truth of dtype float32, shape (batch, H, W, C).
+        y_pred: Softmax predictions of dtype float32, shape (batch, H, W, C).
 
     Returns:
-        Scalar Dice loss for foreground classes only.
+        Scalar Dice loss of dtype float32 for foreground classes only.
     """
     y_true_f = K.flatten(y_true[:, :, :, 1:])
     y_pred_f = K.flatten(y_pred[:, :, :, 1:])
@@ -112,13 +112,13 @@ def weighted_ce(
     """Weighted categorical cross-entropy with per-class scaling.
 
     Args:
-        y_true: One-hot ground-truth (batch, H, W, C).
-        y_pred: Softmax predictions   (batch, H, W, C).
-        weights: 1-D tensor of shape (1, C) with per-class multipliers.
+        y_true: One-hot ground-truth of dtype float32, shape (batch, H, W, C).
+        y_pred: Softmax predictions of dtype float32, shape (batch, H, W, C).
+        weights: Tensor of dtype float32, shape (1, C) with per-class multipliers.
             Defaults to CLASS_WEIGHTS from config.
 
     Returns:
-        Scalar weighted cross-entropy loss.
+        Scalar weighted cross-entropy loss of dtype float32.
     """
     if weights is None:
         weights = tf.constant([list(CLASS_WEIGHTS)], dtype=tf.float32)
@@ -134,11 +134,11 @@ def weighted_ce_dice(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     """Weighted CE + soft Dice loss — primary training loss.
 
     Args:
-        y_true: One-hot ground-truth tensor.
-        y_pred: Softmax prediction tensor.
+        y_true: One-hot ground-truth of dtype float32, shape (batch, H, W, C).
+        y_pred: Softmax prediction of dtype float32, shape (batch, H, W, C).
 
     Returns:
-        Scalar combined loss.
+        Scalar combined loss of dtype float32.
     """
     return dice_loss(y_true, y_pred) + weighted_ce(y_true, y_pred)
 
@@ -147,11 +147,11 @@ def ce_dice(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     """Unweighted categorical CE + soft Dice loss.
 
     Args:
-        y_true: One-hot ground-truth tensor.
-        y_pred: Softmax prediction tensor.
+        y_true: One-hot ground-truth of dtype float32, shape (batch, H, W, C).
+        y_pred: Softmax prediction of dtype float32, shape (batch, H, W, C).
 
     Returns:
-        Scalar combined loss.
+        Scalar combined loss of dtype float32.
     """
     return dice_loss(y_true, y_pred) + categorical_crossentropy(y_true, y_pred)
 
@@ -162,11 +162,11 @@ def weighted_dice_with_categorical_ce(
     """0.2 × Dice loss + categorical cross-entropy.
 
     Args:
-        y_true: One-hot ground-truth tensor.
-        y_pred: Softmax prediction tensor.
+        y_true: One-hot ground-truth of dtype float32, shape (batch, H, W, C).
+        y_pred: Softmax prediction of dtype float32, shape (batch, H, W, C).
 
     Returns:
-        Scalar combined loss.
+        Scalar combined loss of dtype float32.
     """
     return 0.2 * dice_loss(y_true, y_pred) + categorical_crossentropy(y_true, y_pred)
 
@@ -184,13 +184,13 @@ def tversky(
     """Tversky similarity index (asymmetrically weighted Dice).
 
     Args:
-        y_true: Ground-truth tensor (flattened internally).
-        y_pred: Prediction tensor.
+        y_true: Ground-truth tensor of dtype float32, shape (batch, H, W, C).
+        y_pred: Prediction tensor of dtype float32, shape (batch, H, W, C).
         alpha: Weight for false negatives; (1−alpha) weights false positives.
             alpha > 0.5 penalises false negatives more heavily.
 
     Returns:
-        Scalar Tversky index in [0, 1].
+        Scalar Tversky index of dtype float32 in [0, 1].
     """
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
@@ -206,11 +206,11 @@ def tversky_loss(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     """Tversky loss: 1 − tversky index.
 
     Args:
-        y_true: Ground-truth tensor.
-        y_pred: Prediction tensor.
+        y_true: Ground-truth tensor of dtype float32, shape (batch, H, W, C).
+        y_pred: Prediction tensor of dtype float32, shape (batch, H, W, C).
 
     Returns:
-        Scalar Tversky loss.
+        Scalar Tversky loss of dtype float32.
     """
     return 1.0 - tversky(y_true, y_pred)
 
@@ -223,12 +223,12 @@ def focal_tversky_loss(
     """Focal Tversky loss — focuses training on hard, misclassified examples.
 
     Args:
-        y_true: Ground-truth tensor.
-        y_pred: Prediction tensor.
+        y_true: Ground-truth tensor of dtype float32, shape (batch, H, W, C).
+        y_pred: Prediction tensor of dtype float32, shape (batch, H, W, C).
         gamma: Focusing exponent; higher values concentrate on hard examples.
 
     Returns:
-        Scalar focal Tversky loss.
+        Scalar focal Tversky loss of dtype float32.
     """
     return 1.0 - K.pow(tversky(y_true, y_pred), gamma)
 
