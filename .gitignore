@@ -1,3 +1,4 @@
+**/.DS_Store
 __pycache__/**
 **.__pycache__
 **.pyc
@@ -7,3 +8,7 @@ __pycache__/**
 **/*__pycache__/**
 **/__pycache__/
 /trained_models_checkpoint/**
+data/**
+data/
+.claude/**
+.claude/
