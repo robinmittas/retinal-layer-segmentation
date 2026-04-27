@@ -9,7 +9,8 @@ authors = [
 ]
 
 dependencies = [
-  "tensorflow>=2.13.0,<2.16",
+  "tensorflow>=2.13.0",
+  "keras>=3.0",
   "numpy>=1.23.0",
   "opencv-python-headless>=4.8.0",
   "matplotlib>=3.7.0",
@@ -25,8 +26,8 @@ dependencies = [
 Repository = "https://github.com/robinmittas/retinal-layer-segmentation"
 
 [build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.backends.legacy:build"
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]

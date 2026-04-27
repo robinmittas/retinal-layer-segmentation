@@ -8,9 +8,8 @@ y_pred: softmax model output           (batch, H, W, num_classes), float32
 """
 from __future__ import annotations
 
-import tensorflow as tf
 import keras
-from keras import backend as K
+import keras.ops as ops
 from keras.losses import binary_crossentropy, categorical_crossentropy
 
 from retinal_seg.config import CLASS_WEIGHTS, DICE_SMOOTH, NUM_CLASSES
@@ -20,7 +19,7 @@ from retinal_seg.config import CLASS_WEIGHTS, DICE_SMOOTH, NUM_CLASSES
 # ------------------------------------------------------------------
 
 
-def dice_coef(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
+def dice_coef(y_true, y_pred):
     """Global Dice coefficient across all classes (flattened).
 
     Args:
@@ -30,15 +29,15 @@ def dice_coef(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     Returns:
         Scalar Dice coefficient of dtype float32 in [0, 1].
     """
-    y_true_f = K.flatten(y_true)
-    y_pred_f = K.flatten(y_pred)
-    intersection = K.sum(y_true_f * y_pred_f)
+    y_true_f = ops.reshape(y_true, [-1])
+    y_pred_f = ops.reshape(y_pred, [-1])
+    intersection = ops.sum(y_true_f * y_pred_f)
     return (2.0 * intersection + DICE_SMOOTH) / (
-        K.sum(y_true_f) + K.sum(y_pred_f) + DICE_SMOOTH
+        ops.sum(y_true_f) + ops.sum(y_pred_f) + DICE_SMOOTH
     )
 
 
-def dice_coef_per_class(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
+def dice_coef_per_class(y_true, y_pred):
     """Macro-averaged Dice coefficient computed per class.
 
     Args:
@@ -50,12 +49,12 @@ def dice_coef_per_class(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     """
     scores = []
     for idx in range(NUM_CLASSES):
-        y_true_f = K.flatten(y_true[:, :, :, idx])
-        y_pred_f = K.flatten(y_pred[:, :, :, idx])
-        intersection = K.sum(y_true_f * y_pred_f)
-        denom = K.sum(y_true_f + y_pred_f)
+        y_true_f = ops.reshape(y_true[:, :, :, idx], [-1])
+        y_pred_f = ops.reshape(y_pred[:, :, :, idx], [-1])
+        intersection = ops.sum(y_true_f * y_pred_f)
+        denom = ops.sum(y_true_f + y_pred_f)
         scores.append(2.0 * (intersection + DICE_SMOOTH) / (denom + DICE_SMOOTH))
-    return tf.math.reduce_mean(scores)
+    return ops.mean(ops.stack(scores))
 
 
 # ------------------------------------------------------------------
@@ -63,7 +62,7 @@ def dice_coef_per_class(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
 # ------------------------------------------------------------------
 
 
-def dice_loss(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
+def dice_loss(y_true, y_pred):
     """Soft Dice loss: 1 − dice_coef (all classes, flattened).
 
     Args:
@@ -73,17 +72,17 @@ def dice_loss(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     Returns:
         Scalar loss of dtype float32 in [0, 1].
     """
-    y_true_f = K.flatten(y_true)
-    y_pred_f = K.flatten(y_pred)
-    intersection = K.sum(y_true_f * y_pred_f)
-    denom = K.sum(y_true_f + y_pred_f)
-    return K.cast(
+    y_true_f = ops.reshape(y_true, [-1])
+    y_pred_f = ops.reshape(y_pred, [-1])
+    intersection = ops.sum(y_true_f * y_pred_f)
+    denom = ops.sum(y_true_f + y_pred_f)
+    return ops.cast(
         1.0 - 2.0 * (intersection + DICE_SMOOTH) / (denom + DICE_SMOOTH),
-        tf.float32,
+        "float32",
     )
 
 
-def dice_loss_inner_layers(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
+def dice_loss_inner_layers(y_true, y_pred):
     """Soft Dice loss computed only on non-background classes (index 1+).
 
     Args:
@@ -93,10 +92,10 @@ def dice_loss_inner_layers(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     Returns:
         Scalar Dice loss of dtype float32 for foreground classes only.
     """
-    y_true_f = K.flatten(y_true[:, :, :, 1:])
-    y_pred_f = K.flatten(y_pred[:, :, :, 1:])
-    intersection = K.sum(y_true_f * y_pred_f)
-    denom = K.sum(y_true_f + y_pred_f)
+    y_true_f = ops.reshape(y_true[:, :, :, 1:], [-1])
+    y_pred_f = ops.reshape(y_pred[:, :, :, 1:], [-1])
+    intersection = ops.sum(y_true_f * y_pred_f)
+    denom = ops.sum(y_true_f + y_pred_f)
     return 1.0 - 2.0 * (intersection + DICE_SMOOTH) / (denom + DICE_SMOOTH)
 
 
@@ -105,11 +104,7 @@ def dice_loss_inner_layers(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
 # ------------------------------------------------------------------
 
 
-def weighted_ce(
-    y_true: tf.Tensor,
-    y_pred: tf.Tensor,
-    weights: tf.Tensor | None = None,
-) -> tf.Tensor:
+def weighted_ce(y_true, y_pred, weights=None):
     """Weighted categorical cross-entropy with per-class scaling.
 
     Args:
@@ -122,7 +117,7 @@ def weighted_ce(
         Scalar weighted cross-entropy loss of dtype float32.
     """
     if weights is None:
-        weights = tf.constant([list(CLASS_WEIGHTS)], dtype=tf.float32)
+        weights = ops.convert_to_tensor([list(CLASS_WEIGHTS)], dtype="float32")
     return categorical_crossentropy(y_true * weights, y_pred)
 
 
@@ -131,7 +126,7 @@ def weighted_ce(
 # ------------------------------------------------------------------
 
 
-def weighted_ce_dice(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
+def weighted_ce_dice(y_true, y_pred):
     """Weighted CE + soft Dice loss — primary training loss.
 
     Args:
@@ -144,7 +139,7 @@ def weighted_ce_dice(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     return dice_loss(y_true, y_pred) + weighted_ce(y_true, y_pred)
 
 
-def ce_dice(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
+def ce_dice(y_true, y_pred):
     """Unweighted categorical CE + soft Dice loss.
 
     Args:
@@ -157,9 +152,7 @@ def ce_dice(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     return dice_loss(y_true, y_pred) + categorical_crossentropy(y_true, y_pred)
 
 
-def weighted_dice_with_categorical_ce(
-    y_true: tf.Tensor, y_pred: tf.Tensor
-) -> tf.Tensor:
+def weighted_dice_with_categorical_ce(y_true, y_pred):
     """0.2 × Dice loss + categorical cross-entropy.
 
     Args:
@@ -177,11 +170,7 @@ def weighted_dice_with_categorical_ce(
 # ------------------------------------------------------------------
 
 
-def tversky(
-    y_true: tf.Tensor,
-    y_pred: tf.Tensor,
-    alpha: float = 0.7,
-) -> tf.Tensor:
+def tversky(y_true, y_pred, alpha: float = 0.7):
     """Tversky similarity index (asymmetrically weighted Dice).
 
     Args:
@@ -193,17 +182,17 @@ def tversky(
     Returns:
         Scalar Tversky index of dtype float32 in [0, 1].
     """
-    y_true_f = K.flatten(y_true)
-    y_pred_f = K.flatten(y_pred)
-    true_pos = K.sum(y_true_f * y_pred_f)
-    false_neg = K.sum(y_true_f * (1.0 - y_pred_f))
-    false_pos = K.sum((1.0 - y_true_f) * y_pred_f)
+    y_true_f = ops.reshape(y_true, [-1])
+    y_pred_f = ops.reshape(y_pred, [-1])
+    true_pos = ops.sum(y_true_f * y_pred_f)
+    false_neg = ops.sum(y_true_f * (1.0 - y_pred_f))
+    false_pos = ops.sum((1.0 - y_true_f) * y_pred_f)
     return (true_pos + DICE_SMOOTH) / (
         true_pos + alpha * false_neg + (1.0 - alpha) * false_pos + DICE_SMOOTH
     )
 
 
-def tversky_loss(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
+def tversky_loss(y_true, y_pred):
     """Tversky loss: 1 − tversky index.
 
     Args:
@@ -216,11 +205,7 @@ def tversky_loss(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     return 1.0 - tversky(y_true, y_pred)
 
 
-def focal_tversky_loss(
-    y_true: tf.Tensor,
-    y_pred: tf.Tensor,
-    gamma: float = 0.75,
-) -> tf.Tensor:
+def focal_tversky_loss(y_true, y_pred, gamma: float = 0.75):
     """Focal Tversky loss — focuses training on hard, misclassified examples.
 
     Args:
@@ -231,7 +216,7 @@ def focal_tversky_loss(
     Returns:
         Scalar focal Tversky loss of dtype float32.
     """
-    return 1.0 - keras.ops.power(tversky(y_true, y_pred), gamma)
+    return 1.0 - ops.power(tversky(y_true, y_pred), gamma)
 
 
 # ------------------------------------------------------------------
@@ -255,14 +240,14 @@ def focal_loss(gamma: float = 2.0, alpha: float = 0.25):
     gamma = float(gamma)
     alpha = float(alpha)
 
-    def _focal_loss_fn(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
+    def _focal_loss_fn(y_true, y_pred):
         epsilon = 1e-9
-        y_true = tf.cast(y_true, tf.float32)
-        y_pred = tf.cast(y_pred, tf.float32)
+        y_true = ops.cast(y_true, "float32")
+        y_pred = ops.cast(y_pred, "float32")
         model_out = y_pred + epsilon
-        ce = y_true * (-tf.math.log(model_out))
-        weight = y_true * tf.pow(1.0 - model_out, gamma)
+        ce = y_true * (-ops.log(model_out))
+        weight = y_true * ops.power(1.0 - model_out, gamma)
         fl = alpha * weight * ce
-        return tf.reduce_mean(tf.reduce_max(fl, axis=1))
+        return ops.mean(ops.max(fl, axis=1))
 
     return _focal_loss_fn

@@ -12,3 +12,9 @@ data/**
 data/
 .claude/**
 .claude/
+retinal_layer_segmentation.egg-info/**
+retinal_layer_segmentation.egg-info/
+notebooks/model_training/tmp/**
+notebooks/model_training/tmp/
+trained_models_checkpoint/**
+trained_models_checkpoint/

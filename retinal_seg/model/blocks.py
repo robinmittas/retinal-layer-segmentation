@@ -102,14 +102,14 @@ def non_local_block(
             Defaults to channels // 2 (minimum 1).
         compression: Spatial compression factor applied to the key/value
             paths to reduce memory. 1 disables compression.
-        mode: Attention variant – one of 'embedded', 'gaussian', or 'dot'.
+        mode: Attention variant - one of 'embedded', 'gaussian', or 'dot'.
         add_residual: If True, adds the original input to the output.
 
     Returns:
         Tensor of dtype float32 with the same shape as ip.
 
     Raises:
-        ValueError: If mode is not recognised or input rank is not 3–5.
+        ValueError: If mode is not recognised or input rank is not 3-5.
         NotImplementedError: If mode='concatenate'.
     """
     valid_modes = {"gaussian", "embedded", "dot", "concatenate"}

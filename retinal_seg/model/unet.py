@@ -55,7 +55,7 @@ def build_unet(
         pretrained_weights: Path to a .h5 weights checkpoint, or None.
         compile_model: If True, compile with Adam and dice_coef metric.
         bn_list: List of 14 booleans enabling BatchNorm per residual block
-            (encoder blocks 1–6, bottleneck blocks 7–8, decoder blocks 9–14).
+            (encoder blocks 1-6, bottleneck blocks 7-8, decoder blocks 9-14).
             Defaults to all-False when None.
         drop_rate: Scalar applied to all blocks, or a 14-element list
             specifying a per-block rate.

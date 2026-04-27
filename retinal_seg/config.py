@@ -20,9 +20,9 @@ LEARNING_RATE: float = 1e-3
 # ------------------------------------------------------------------
 # Label remapping: 11-class OCTExplorer labels → 4 segmentation classes
 # 0: background
-# 1: ILM–OPL–HFL  (inner retinal layers, classes 2–5 collapsed)
+# 1: ILM-OPL-HFL  (inner retinal layers, classes 2-5 collapsed)
 # 2: ONL           (Outer Nuclear Layer, class 6)
-# 3: BMEIS–OB–RPE  (outer retinal layers, classes 7–11 collapsed)
+# 3: BMEIS-OB-RPE  (outer retinal layers, classes 7-11 collapsed)
 # ------------------------------------------------------------------
 LABEL_REMAP: Dict[int, int] = {
     2: 1, 3: 1, 4: 1, 5: 1,

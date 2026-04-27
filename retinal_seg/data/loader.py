@@ -10,7 +10,6 @@ from typing import Dict, Tuple
 import cv2
 import numpy as np
 import tensorflow as tf
-from keras.layers import GaussianNoise
 
 from retinal_seg.config import (
     IMG_HEIGHT,
@@ -33,10 +32,10 @@ def remap_labels(y_data: np.ndarray) -> np.ndarray:
     on large arrays.
 
     Args:
-        y_data: Integer label array with values 0–11.
+        y_data: Integer label array with values 0-11.
 
     Returns:
-        Label array with values 0–3 (same shape as input).
+        Label array with values 0-3 (same shape as input).
     """
     for src, dst in LABEL_REMAP.items():
         y_data = np.where(y_data == src, dst, y_data)
@@ -78,11 +77,11 @@ def read_npy_file(
     y_data = remap_labels(y_data)
     target = tf.one_hot(y_data, NUM_CLASSES)
 
-    x_data = tf.cast(tf.expand_dims(x_data, axis=-1), tf.float32)
-    target = tf.cast(target, tf.float32)
+    x_data = np.expand_dims(x_data, axis=-1).astype(np.float32)
+    target = target.numpy().astype(np.float32)
 
     if train:
-        x_data = GaussianNoise(stddev=5)(x_data, training=True)
+        x_data = x_data + np.random.normal(0, 5, x_data.shape).astype(np.float32)
 
     return x_data, target
 
@@ -111,15 +110,16 @@ def _make_tf_dataset(
     Returns:
         Batched tf.data.Dataset yielding (image, label) pairs.
     """
+    def _load(x_path, y_path):
+        x, y = tf.numpy_function(
+            read_npy_file, [x_path, y_path, train], [tf.float32, tf.float32]
+        )
+        x.set_shape([IMG_HEIGHT, IMG_WIDTH, 1])
+        y.set_shape([IMG_HEIGHT, IMG_WIDTH, NUM_CLASSES])
+        return x, y
+
     dataset = tf.data.Dataset.from_tensor_slices((x_paths, y_paths))
-    dataset = dataset.map(
-        lambda x, y: tuple(
-            tf.numpy_function(
-                read_npy_file, [x, y, train], [tf.float32, tf.float32]
-            )
-        ),
-        num_parallel_calls=tf.data.AUTOTUNE,
-    )
+    dataset = dataset.map(_load, num_parallel_calls=tf.data.AUTOTUNE)
     if shuffle:
         dataset = dataset.shuffle(SHUFFLE_BUFFER_SIZE)
     return dataset.batch(batch_size).prefetch(tf.data.AUTOTUNE)
@@ -160,6 +160,9 @@ def train_val_test_split(
 
     test_set = set(patients[:n_test])
     val_set = set(patients[n_test: n_test + n_val])
+    train_set = set(patients) - test_set - val_set
+
+    print(f"Train set patients: {train_set}, Validation set patients {val_set}, Test set patients {test_set}")
 
     train_map: Dict[str, str] = {}
     val_map: Dict[str, str] = {}
